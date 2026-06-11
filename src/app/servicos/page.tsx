@@ -3,15 +3,9 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 
-type Servico = {
-  id: string
-  tipo: string
-  descricao: string
-  valor: number
-  data: string
-  status: string
-  created_at: string
-}
+type Servico = { id: string; tipo: string; descricao: string; valor: number; data: string; status: string; cliente_id: string; equipamento_id: string }
+type Cliente = { id: string; nome: string }
+type Equipamento = { id: string; nome: string; cliente_id: string }
 
 export default function Servicos() {
   const [tipo, setTipo] = useState('')
@@ -19,27 +13,42 @@ export default function Servicos() {
   const [valor, setValor] = useState('')
   const [data, setData] = useState('')
   const [status, setStatus] = useState('pendente')
+  const [clienteId, setClienteId] = useState('')
+  const [equipamentoId, setEquipamentoId] = useState('')
   const [mensagem, setMensagem] = useState('')
   const [servicos, setServicos] = useState<Servico[]>([])
+  const [clientes, setClientes] = useState<Cliente[]>([])
+  const [equipamentos, setEquipamentos] = useState<Equipamento[]>([])
   const [carregando, setCarregando] = useState(false)
 
-  useEffect(() => { buscarServicos() }, [])
+  useEffect(() => { buscar() }, [])
 
-  async function buscarServicos() {
-    const { data: rows } = await supabase.from('servicos').select('*').order('created_at', { ascending: false })
-    if (rows) setServicos(rows)
+  async function buscar() {
+    const { data: sv } = await supabase.from('servicos').select('*').order('created_at', { ascending: false })
+    const { data: cl } = await supabase.from('clientes').select('id, nome').order('nome')
+    const { data: eq } = await supabase.from('equipamentos').select('id, nome, cliente_id')
+    if (sv) setServicos(sv)
+    if (cl) setClientes(cl)
+    if (eq) setEquipamentos(eq)
   }
+
+  const equipamentosFiltrados = clienteId ? equipamentos.filter(e => e.cliente_id === clienteId) : equipamentos
+
+  function nomeCliente(id: string) { return clientes.find(c => c.id === id)?.nome || '—' }
+  function nomeEquipamento(id: string) { return equipamentos.find(e => e.id === id)?.nome || '—' }
 
   async function salvar() {
     if (!tipo) { setMensagem('Tipo é obrigatório!'); return }
     setCarregando(true)
-    const { error } = await supabase.from('servicos').insert([{ tipo, descricao, valor: parseFloat(valor) || 0, data, status }])
-    if (error) {
-      setMensagem('Erro: ' + error.message)
-    } else {
-      setMensagem('Serviço salvo com sucesso!')
-      setTipo(''); setDescricao(''); setValor(''); setData(''); setStatus('pendente')
-      buscarServicos()
+    const { error } = await supabase.from('servicos').insert([{
+      tipo, descricao, valor: parseFloat(valor) || 0, data, status,
+      cliente_id: clienteId || null, equipamento_id: equipamentoId || null
+    }])
+    if (error) { setMensagem('Erro: ' + error.message) }
+    else {
+      setMensagem('Serviço salvo!')
+      setTipo(''); setDescricao(''); setValor(''); setData(''); setStatus('pendente'); setClienteId(''); setEquipamentoId('')
+      buscar()
     }
     setCarregando(false)
     setTimeout(() => setMensagem(''), 3000)
@@ -47,7 +56,7 @@ export default function Servicos() {
 
   async function excluir(id: string) {
     await supabase.from('servicos').delete().eq('id', id)
-    buscarServicos()
+    buscar()
   }
 
   const statusCor: Record<string, string> = {
@@ -68,7 +77,7 @@ export default function Servicos() {
         </div>
 
         {mensagem && (
-          <div className={`mb-6 p-4 rounded-lg text-sm font-medium ${mensagem.includes('sucesso') ? 'bg-green-900 text-green-300 border border-green-700' : 'bg-red-900 text-red-300 border border-red-700'}`}>
+          <div className={`mb-6 p-4 rounded-lg text-sm font-medium ${mensagem.includes('salvo') ? 'bg-green-900 text-green-300 border border-green-700' : 'bg-red-900 text-red-300 border border-red-700'}`}>
             {mensagem}
           </div>
         )}
@@ -76,6 +85,22 @@ export default function Servicos() {
         <div className="bg-slate-800 rounded-2xl border border-slate-700 p-6 mb-8">
           <h2 className="text-lg font-semibold text-white mb-6">+ Novo Serviço</h2>
           <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-slate-400 mb-1">Cliente</label>
+              <select value={clienteId} onChange={e => { setClienteId(e.target.value); setEquipamentoId('') }}
+                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                <option value="">Selecione o cliente</option>
+                {clientes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm text-slate-400 mb-1">Equipamento</label>
+              <select value={equipamentoId} onChange={e => setEquipamentoId(e.target.value)}
+                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                <option value="">Selecione o equipamento</option>
+                {equipamentosFiltrados.map(e => <option key={e.id} value={e.id}>{e.nome}</option>)}
+              </select>
+            </div>
             <div>
               <label className="block text-sm text-slate-400 mb-1">Tipo de Serviço</label>
               <select value={tipo} onChange={e => setTipo(e.target.value)}
@@ -135,6 +160,7 @@ export default function Servicos() {
                       <span className={`text-xs px-2 py-0.5 rounded-full ${statusCor[s.status] || 'bg-slate-700 text-slate-300'}`}>{s.status}</span>
                     </div>
                     <p className="text-sm text-slate-400">{s.data} · R$ {s.valor?.toFixed(2)}</p>
+                    <p className="text-xs text-green-400 mt-1">👤 {nomeCliente(s.cliente_id)} · ⚙️ {nomeEquipamento(s.equipamento_id)}</p>
                     {s.descricao && <p className="text-xs text-slate-500 mt-1">{s.descricao}</p>}
                   </div>
                   <button onClick={() => excluir(s.id)} className="text-red-400 hover:text-red-300 text-sm">Excluir</button>
