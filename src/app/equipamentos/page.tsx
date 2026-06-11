@@ -34,12 +34,21 @@ export default function Equipamentos() {
     if (!nome) { setMensagem('Nome é obrigatório!'); return }
     setCarregando(true)
     const { error } = await supabase.from('equipamentos').insert([{
-      nome, marca_modelo: marcaModelo, numero_serie: numeroSerie, observacoes, cliente_id: clienteId || null
+      nome,
+      marca_modelo: marcaModelo,
+      numero_serie: numeroSerie,
+      observacoes,
+      cliente_id: clienteId || null
     }])
-    if (error) { setMensagem('Erro: ' + error.message) }
-    else {
+    if (error) {
+      setMensagem('Erro: ' + error.message)
+    } else {
       setMensagem('Equipamento salvo!')
-      setNome(''); setMarcaModelo(''); setNumeroSerie(''); setObservacoes(''); setClienteId('')
+      setNome('')
+      setMarcaModelo('')
+      setNumeroSerie('')
+      setObservacoes('')
+      setClienteId('')
       buscar()
     }
     setCarregando(false)
@@ -99,3 +108,37 @@ export default function Equipamentos() {
               <textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} placeholder="Detalhes adicionais..."
                 className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 h-20"/>
             </div>
+          </div>
+          <button onClick={salvar} disabled={carregando}
+            className="mt-6 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white px-8 py-2.5 rounded-lg text-sm font-medium transition-colors">
+            {carregando ? 'Salvando...' : 'Salvar Equipamento'}
+          </button>
+        </div>
+
+        <div className="bg-slate-800 rounded-2xl border border-slate-700">
+          <div className="p-6 border-b border-slate-700 flex justify-between items-center">
+            <h2 className="text-lg font-semibold text-white">Equipamentos Cadastrados</h2>
+            <span className="bg-purple-600 text-white text-xs px-3 py-1 rounded-full">{equipamentos.length} equipamentos</span>
+          </div>
+          {equipamentos.length === 0 ? (
+            <div className="p-12 text-center text-slate-500">Nenhum equipamento cadastrado ainda.</div>
+          ) : (
+            <div className="divide-y divide-slate-700">
+              {equipamentos.map(e => (
+                <div key={e.id} className="p-5 flex justify-between items-center">
+                  <div>
+                    <p className="font-semibold text-white">⚙️ {e.nome}</p>
+                    <p className="text-sm text-slate-400">{e.marca_modelo} · Série: {e.numero_serie}</p>
+                    <p className="text-xs text-purple-400 mt-1">👤 {nomeCliente(e.cliente_id)}</p>
+                    {e.observacoes && <p className="text-xs text-slate-500 mt-1">{e.observacoes}</p>}
+                  </div>
+                  <button onClick={() => excluir(e.id)} className="text-red-400 hover:text-red-300 text-sm">Excluir</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </main>
+  )
+}

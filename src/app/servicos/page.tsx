@@ -20,7 +20,7 @@ export default function Servicos() {
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>([])
   const [carregando, setCarregando] = useState(false)
-}
+
   useEffect(() => { buscar() }, [])
 
   async function buscar() {
