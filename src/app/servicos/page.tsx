@@ -32,22 +32,41 @@ export default function Servicos() {
     if (eq) setEquipamentos(eq)
   }
 
-  const equipamentosFiltrados = clienteId ? equipamentos.filter(e => e.cliente_id === clienteId) : equipamentos
+  const equipamentosFiltrados = clienteId
+    ? equipamentos.filter(e => e.cliente_id === clienteId)
+    : equipamentos
 
-  function nomeCliente(id: string) { return clientes.find(c => c.id === id)?.nome || '—' }
-  function nomeEquipamento(id: string) { return equipamentos.find(e => e.id === id)?.nome || '—' }
+  function nomeCliente(id: string) {
+    return clientes.find(c => c.id === id)?.nome || '—'
+  }
+
+  function nomeEquipamento(id: string) {
+    return equipamentos.find(e => e.id === id)?.nome || '—'
+  }
 
   async function salvar() {
     if (!tipo) { setMensagem('Tipo é obrigatório!'); return }
     setCarregando(true)
     const { error } = await supabase.from('servicos').insert([{
-      tipo, descricao, valor: parseFloat(valor) || 0, data, status,
-      cliente_id: clienteId || null, equipamento_id: equipamentoId || null
+      tipo,
+      descricao,
+      valor: parseFloat(valor) || 0,
+      data,
+      status,
+      cliente_id: clienteId || null,
+      equipamento_id: equipamentoId || null
     }])
-    if (error) { setMensagem('Erro: ' + error.message) }
-    else {
+    if (error) {
+      setMensagem('Erro: ' + error.message)
+    } else {
       setMensagem('Serviço salvo!')
-      setTipo(''); setDescricao(''); setValor(''); setData(''); setStatus('pendente'); setClienteId(''); setEquipamentoId('')
+      setTipo('')
+      setDescricao('')
+      setValor('')
+      setData('')
+      setStatus('pendente')
+      setClienteId('')
+      setEquipamentoId('')
       buscar()
     }
     setCarregando(false)
@@ -73,7 +92,9 @@ export default function Servicos() {
             <h1 className="text-3xl font-bold text-white">🛠️ Serviços</h1>
             <p className="text-slate-400 mt-1">Registre os serviços realizados</p>
           </div>
-          <a href="/" className="text-slate-400 hover:text-white text-sm border border-slate-600 px-4 py-2 rounded-lg">← Voltar</a>
+          <a href="/" className="text-slate-400 hover:text-white text-sm border border-slate-600 px-4 py-2 rounded-lg">
+            ← Voltar
+          </a>
         </div>
 
         {mensagem && (
@@ -90,7 +111,9 @@ export default function Servicos() {
               <select value={clienteId} onChange={e => { setClienteId(e.target.value); setEquipamentoId('') }}
                 className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
                 <option value="">Selecione o cliente</option>
-                {clientes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                {clientes.map(c => (
+                  <option key={c.id} value={c.id}>{c.nome}</option>
+                ))}
               </select>
             </div>
             <div>
@@ -98,7 +121,9 @@ export default function Servicos() {
               <select value={equipamentoId} onChange={e => setEquipamentoId(e.target.value)}
                 className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
                 <option value="">Selecione o equipamento</option>
-                {equipamentosFiltrados.map(e => <option key={e.id} value={e.id}>{e.nome}</option>)}
+                {equipamentosFiltrados.map(e => (
+                  <option key={e.id} value={e.id}>{e.nome}</option>
+                ))}
               </select>
             </div>
             <div>
@@ -157,13 +182,19 @@ export default function Servicos() {
                   <div>
                     <div className="flex items-center gap-3 mb-1">
                       <p className="font-semibold text-white">🛠️ {s.tipo}</p>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${statusCor[s.status] || 'bg-slate-700 text-slate-300'}`}>{s.status}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${statusCor[s.status] || 'bg-slate-700 text-slate-300'}`}>
+                        {s.status}
+                      </span>
                     </div>
                     <p className="text-sm text-slate-400">{s.data} · R$ {s.valor?.toFixed(2)}</p>
-                    <p className="text-xs text-green-400 mt-1">👤 {nomeCliente(s.cliente_id)} · ⚙️ {nomeEquipamento(s.equipamento_id)}</p>
+                    <p className="text-xs text-green-400 mt-1">
+                      👤 {nomeCliente(s.cliente_id)} · ⚙️ {nomeEquipamento(s.equipamento_id)}
+                    </p>
                     {s.descricao && <p className="text-xs text-slate-500 mt-1">{s.descricao}</p>}
                   </div>
-                  <button onClick={() => excluir(s.id)} className="text-red-400 hover:text-red-300 text-sm">Excluir</button>
+                  <button onClick={() => excluir(s.id)} className="text-red-400 hover:text-red-300 text-sm">
+                    Excluir
+                  </button>
                 </div>
               ))}
             </div>
